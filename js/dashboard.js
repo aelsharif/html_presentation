@@ -3,6 +3,14 @@ class PresentationDashboard {
         this.presentations = [];
         this.filteredPresentations = [];
         this.currentView = 'grid';
+        
+        // Discovery configuration - optimized for minimal 404s
+        this.discoveryConfig = {
+            mode: 'conservative',  // 'conservative' (minimal 404s) or 'comprehensive' (finds all)
+            maxRequests: 30,       // Strict limit to prevent console spam
+            priorityOnly: false    // Set to true to only check known priority folders
+        };
+        
         this.searchInput = document.getElementById('searchInput');
         this.presentationsGrid = document.getElementById('presentationsGrid');
         this.loadingState = document.getElementById('loadingState');
@@ -138,7 +146,7 @@ class PresentationDashboard {
     }
 
     async discoverPresentationFoldersFast() {
-        console.log('🚀 Starting COMPREHENSIVE & FAST presentation discovery...');
+        console.log(`🚀 Starting ${this.discoveryConfig.mode.toUpperCase()} presentation discovery...`);
         const startTime = performance.now();
         
         // Strategy 1: Try to get directory listing directly (fastest if supported)
@@ -150,12 +158,17 @@ class PresentationDashboard {
             return discoveredFolders;
         }
 
-        // Strategy 2: Comprehensive parallel scanning with intelligent patterns
-        console.log('📁 Directory listing not available, using comprehensive parallel scan...');
-        discoveredFolders = await this.comprehensiveParallelScan();
+        // Strategy 2: Mode-based scanning
+        if (this.discoveryConfig.mode === 'conservative') {
+            console.log('📁 Using CONSERVATIVE scan (minimal 404s, finds common folders)...');
+            discoveredFolders = await this.conservativeScan();
+        } else {
+            console.log('📁 Using COMPREHENSIVE scan (more 404s, finds all folders)...');
+            discoveredFolders = await this.comprehensiveParallelScan();
+        }
 
         const endTime = performance.now();
-        console.log(`🎯 Comprehensive discovery complete: Found ${discoveredFolders.length} folders in ${Math.round(endTime - startTime)}ms`);
+        console.log(`🎯 ${this.discoveryConfig.mode} discovery complete: Found ${discoveredFolders.length} folders in ${Math.round(endTime - startTime)}ms`);
         return discoveredFolders;
     }
 
@@ -325,28 +338,37 @@ class PresentationDashboard {
     }
 
     async folderExistsFast(folderName) {
-        // Ultra-fast check - try both paths in parallel
+        // Ultra-fast check - try the most common file patterns
         const testPaths = [
             `slides/${folderName}/config.json`,
-            `slides/${folderName}/01.html`
+            `slides/${folderName}/01-welcome.html`,  // Common pattern like demo-presentation
+            `slides/${folderName}/01.html`,
+            `slides/${folderName}/index.html`
         ];
         
         try {
-            // Check both paths simultaneously
+            // Check both paths simultaneously with silent 404 handling
             const promises = testPaths.map(async (testPath) => {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 400); // Very aggressive timeout
+                const timeoutId = setTimeout(() => controller.abort(), 300); // Faster timeout
                 
                 try {
                     const response = await fetch(testPath, { 
                         signal: controller.signal,
-                        method: 'GET'
+                        method: 'GET',
+                        // Add headers to potentially reduce server logging
+                        headers: {
+                            'Cache-Control': 'no-cache'
+                        }
                     });
                     
                     clearTimeout(timeoutId);
-                    return response.ok;
+                    
+                    // Only return true for actual success (200-299)
+                    return response.status >= 200 && response.status < 300;
                 } catch (error) {
                     clearTimeout(timeoutId);
+                    // Silently handle all errors (including 404s)
                     return false;
                 }
             });
@@ -788,21 +810,33 @@ class PresentationDashboard {
         const discoveredFolders = [];
         
         // Strategy 1: Known patterns (high priority, parallel)
+        console.log('📂 Step 1/4: Scanning known presentation patterns...');
         const knownPatterns = await this.scanKnownPatterns();
         discoveredFolders.push(...knownPatterns);
         
-        // Strategy 2: Systematic alphabet scan (comprehensive coverage)
-        const alphabetScan = await this.systematicAlphabetScan(discoveredFolders);
+        // Early exit if we found folders and not in intensive mode
+        if (discoveredFolders.length >= 3 && this.discoveryConfig.earlyExit && !this.discoveryConfig.intensiveMode) {
+            console.log(`🎯 Found ${discoveredFolders.length} folders in first scan. Skipping intensive discovery to reduce 404 errors.`);
+            console.log('💡 To find more presentations: Set discoveryConfig.intensiveMode = true or refresh manually.');
+            return [...new Set(discoveredFolders)];
+        }
+        
+        // Strategy 2: Conservative alphabet scan (only if few folders found)
+        console.log('📂 Step 2/4: Conservative alphabet scan (limited to reduce 404s)...');
+        const alphabetScan = await this.conservativeAlphabetScan(discoveredFolders);
         discoveredFolders.push(...alphabetScan);
         
-        // Strategy 3: Common word combinations
-        const wordCombinations = await this.scanWordCombinations(discoveredFolders);
-        discoveredFolders.push(...wordCombinations);
+        // Strategy 3: Word combinations (only if still few found)
+        if (discoveredFolders.length < 2) {
+            console.log('📂 Step 3/4: Scanning word combinations...');
+            const wordCombinations = await this.scanWordCombinations(discoveredFolders);
+            discoveredFolders.push(...wordCombinations);
+        }
         
-        // Strategy 4: Ultimate fallback - comprehensive brute force (if still few found)
-        if (discoveredFolders.length < 5) {
-            console.log('🔍 Running comprehensive brute force scan as fallback...');
-            const bruteForceFolders = await this.comprehensiveBruteForce(discoveredFolders);
+        // Strategy 4: Limited brute force (only as absolute last resort)
+        if (discoveredFolders.length === 0) {
+            console.log('📂 Step 4/4: Limited brute force scan (last resort)...');
+            const bruteForceFolders = await this.limitedBruteForce(discoveredFolders);
             discoveredFolders.push(...bruteForceFolders);
         }
         
@@ -810,63 +844,56 @@ class PresentationDashboard {
     }
 
     async scanKnownPatterns() {
-        console.log('🔍 Scanning known presentation patterns...');
+        console.log('🔍 Scanning known presentation patterns (optimized for fewer 404s)...');
         
         // Priority 1: Absolute highest priority (known existing folders)
         const absolutePriority = [
             'demo-presentation', 'business-presentation', 'tutorial-presentation'
         ];
         
-        // Priority 2: Year-based patterns (project-2024 type)
+        console.log('🎯 Testing critical folders:', absolutePriority);
+        
+        // Priority 2: Year-based patterns (most likely to exist)
         const currentYear = new Date().getFullYear();
         const yearBasedPatterns = [
-            `project-${currentYear}`, `project-${currentYear - 1}`, `project-${currentYear + 1}`,
-            `presentation-${currentYear}`, `slides-${currentYear}`, 
-            `demo-${currentYear}`, `test-${currentYear}`,
-            `${currentYear}`, `${currentYear-1}`, `${currentYear+1}`,
-            `${currentYear}-project`, `${currentYear}-presentation`, `${currentYear}-slides`
+            `project-${currentYear}`, `presentation-${currentYear}`, `slides-${currentYear}`, 
+            `project-${currentYear - 1}`, `presentation-${currentYear - 1}`,
+            `${currentYear}`, `${currentYear-1}`
         ];
         
-        // Priority 3: Common naming patterns
+        // Priority 3: Essential common patterns only (reduced set)
         const commonPatterns = [
-            'presentation', 'presentations', 'slides', 'slide', 'deck', 'decks',
-            'demo', 'demos', 'sample', 'example', 'test', 'main', 'default',
-            'project', 'projects', 'my-presentation', 'my-slides',
-            'new-presentation', 'final-presentation', 'test-presentation',
-            'meeting', 'conference', 'workshop', 'seminar', 'training',
-            'report', 'pitch', 'intro', 'overview', 'summary'
+            'presentation', 'presentations', 'slides', 'slide', 
+            'demo', 'project', 'test', 'main'
         ];
         
-        // Priority 4: Numbered variations
+        // Priority 4: Only most likely numbered patterns (reduced from 50 to 15)
         const numberedPatterns = [
-            ...Array.from({length: 10}, (_, i) => `presentation${i + 1}`),
-            ...Array.from({length: 10}, (_, i) => `presentation-${i + 1}`),
-            ...Array.from({length: 10}, (_, i) => `slides${i + 1}`),
-            ...Array.from({length: 10}, (_, i) => `slides-${i + 1}`),
-            ...Array.from({length: 5}, (_, i) => `deck${i + 1}`),
-            ...Array.from({length: 5}, (_, i) => `demo${i + 1}`),
-            ...Array.from({length: 5}, (_, i) => `project${i + 1}`),
-            ...Array.from({length: 5}, (_, i) => `project-${i + 1}`)
+            'presentation-1', 'presentation-2', 'presentation-3',
+            'slides-1', 'slides-2', 'slides-3',
+            'project-1', 'project-2', 'demo-1', 'demo-2'
         ];
         
         const foundFolders = [];
+        let totalRequests = 0;
         
-        // Scan in priority order with smaller batches for critical ones
+        // Scan in priority order with adaptive termination
         const priorityGroups = [
-            { patterns: absolutePriority, batchSize: 3, delay: 0 },
-            { patterns: yearBasedPatterns, batchSize: 8, delay: 5 },
-            { patterns: commonPatterns, batchSize: 10, delay: 10 },
-            { patterns: numberedPatterns, batchSize: 15, delay: 20 }
+            { name: "Critical", patterns: absolutePriority, batchSize: 3, delay: 0 },
+            { name: "Year-based", patterns: yearBasedPatterns, batchSize: 4, delay: 10 },
+            { name: "Common", patterns: commonPatterns, batchSize: 4, delay: 15 },
+            { name: "Numbered", patterns: numberedPatterns, batchSize: 5, delay: 25 }
         ];
         
         for (const group of priorityGroups) {
-            console.log(`🔍 Scanning ${group.patterns.length} patterns in group...`);
+            console.log(`🔍 ${group.name} scan: ${group.patterns.length} patterns...`);
             
             for (let i = 0; i < group.patterns.length; i += group.batchSize) {
                 const batch = group.patterns.slice(i, i + group.batchSize);
                 
                 const batchPromises = batch.map(async (pattern) => {
                     const exists = await this.folderExistsFast(pattern);
+                    totalRequests += 2; // Each check tries 2 files
                     return exists ? pattern : null;
                 });
                 
@@ -878,48 +905,49 @@ class PresentationDashboard {
                     }
                 });
                 
+                // Early termination if we found a good number
+                if (foundFolders.length >= 5 && group.name !== "Critical") {
+                    console.log(`🎯 Found ${foundFolders.length} folders, skipping remaining ${group.name} patterns to reduce 404s`);
+                    break;
+                }
+                
                 // Delay between batches
                 if (i + group.batchSize < group.patterns.length && group.delay > 0) {
                     await new Promise(resolve => setTimeout(resolve, group.delay));
                 }
             }
+            
+            // Skip less important groups if we have enough folders
+            if (foundFolders.length >= 4 && group.name === "Year-based") {
+                console.log(`🎯 Found ${foundFolders.length} folders, skipping lower-priority scans to reduce network requests`);
+                break;
+            }
         }
         
-        console.log(`✅ Known patterns scan found: ${foundFolders.length} folders`);
+        console.log(`✅ Pattern scan complete: ${foundFolders.length} folders found with ~${totalRequests} requests`);
         return foundFolders;
     }
 
-    async systematicAlphabetScan(excludeFolders) {
-        console.log('🔍 Running systematic alphabet scan for complete coverage...');
+    async conservativeAlphabetScan(excludeFolders) {
+        console.log('🔍 Conservative alphabet scan (limited to reduce 404s)...');
         
         const candidates = [];
         
-        // Single letter combinations
-        const letters = 'abcdefghijklmnopqrstuvwxyz';
-        for (const letter of letters) {
-            candidates.push(letter);
-            candidates.push(`${letter}${letter}`); // aa, bb, cc, etc.
-        }
+        // Only most common single letters (reduced from 26 to 8)
+        const commonLetters = ['a', 'b', 'c', 'd', 'm', 'p', 't', 'x'];
+        candidates.push(...commonLetters);
         
-        // Two letter combinations (common ones)
-        const commonTwoLetters = ['ab', 'cd', 'ef', 'gh', 'ij', 'kl', 'mn', 'op', 'qr', 'st', 'uv', 'wx', 'yz'];
-        candidates.push(...commonTwoLetters);
-        
-        // Common prefixes with numbers
-        const prefixes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-        for (const prefix of prefixes) {
-            for (let i = 1; i <= 5; i++) {
-                candidates.push(`${prefix}${i}`);
-                candidates.push(`${prefix}-${i}`);
-                candidates.push(`${prefix}_${i}`);
-            }
-        }
+        // Only most likely numbered combinations (reduced from 130 to 20)
+        const likelyNumbers = ['a1', 'b1', 'c1', 'd1', 'p1', 't1', 'x1', 'z1', 'a2', 'b2'];
+        candidates.push(...likelyNumbers);
         
         // Filter out already found folders
         const newCandidates = candidates.filter(c => !excludeFolders.includes(c));
         
-        // Process in parallel with aggressive batching
-        const batchSize = 20;
+        console.log(`🔍 Testing ${newCandidates.length} conservative candidates (vs ${26*5} in full scan)`);
+        
+        // Process in smaller batches with delays to be server-friendly
+        const batchSize = 5;
         const foundFolders = [];
         
         for (let i = 0; i < newCandidates.length; i += batchSize) {
@@ -934,38 +962,45 @@ class PresentationDashboard {
             results.forEach(result => {
                 if (result.status === 'fulfilled' && result.value) {
                     foundFolders.push(result.value);
-                    console.log(`✅ Alphabet scan found: ${result.value}`);
+                    console.log(`✅ Conservative scan found: ${result.value}`);
                 }
             });
+            
+            // Small delay to be server-friendly
+            if (i + batchSize < newCandidates.length) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
         }
         
-        console.log(`✅ Alphabet scan found: ${foundFolders.length} additional folders`);
+        console.log(`✅ Conservative scan found: ${foundFolders.length} additional folders`);
         return foundFolders;
     }
 
     async scanWordCombinations(excludeFolders) {
-        console.log('🔍 Scanning word combinations...');
+        console.log('🔍 Conservative word combinations scan...');
         
-        const words = ['my', 'new', 'old', 'temp', 'tmp', 'backup', 'draft', 'final', 'work', 'home', 'docs', 'files'];
-        const bases = ['presentation', 'slides', 'deck', 'demo', 'project'];
+        // Reduced sets to minimize requests
+        const words = ['my', 'new', 'final', 'temp']; // Reduced from 12 to 4
+        const bases = ['presentation', 'slides', 'project']; // Reduced from 5 to 3
         
         const combinations = [];
         
-        // Word + base combinations
+        // Only most common word + base combinations
         for (const word of words) {
             for (const base of bases) {
                 combinations.push(`${word}-${base}`);
-                combinations.push(`${word}_${base}`);
                 combinations.push(`${base}-${word}`);
-                combinations.push(`${base}_${word}`);
+                // Skip underscore variants to reduce requests by 50%
             }
         }
         
         // Filter out already found
         const newCombinations = combinations.filter(c => !excludeFolders.includes(c));
         
-        // Process in parallel
-        const batchSize = 15;
+        console.log(`🔍 Testing ${newCombinations.length} word combinations (reduced from ${12*5*4} possible)`);
+        
+        // Process in smaller batches with delays
+        const batchSize = 6;
         const foundFolders = [];
         
         for (let i = 0; i < newCombinations.length; i += batchSize) {
@@ -983,63 +1018,42 @@ class PresentationDashboard {
                     console.log(`✅ Word combination found: ${result.value}`);
                 }
             });
+            
+            // Delay between batches
+            if (i + batchSize < newCombinations.length) {
+                await new Promise(resolve => setTimeout(resolve, 75));
+            }
         }
         
         console.log(`✅ Word combinations found: ${foundFolders.length} additional folders`);
         return foundFolders;
     }
 
-    async comprehensiveBruteForce(excludeFolders) {
-        console.log('🔍 Running comprehensive brute force scan (last resort)...');
+    async limitedBruteForce(excludeFolders) {
+        console.log('🔍 Limited brute force scan (only essential patterns)...');
         
-        const candidates = new Set();
-        
-        // 1. All single characters and numbers
-        for (let i = 0; i < 26; i++) {
-            candidates.add(String.fromCharCode(97 + i)); // a-z
-        }
-        for (let i = 0; i <= 99; i++) {
-            candidates.add(i.toString()); // 0-99
-        }
-        
-        // 2. Common two-character combinations
-        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        for (let i = 0; i < chars.length; i++) {
-            for (let j = 0; j < chars.length; j++) {
-                if (i !== j) { // Avoid aa, bb, etc. (already covered)
-                    candidates.add(chars[i] + chars[j]);
-                }
-            }
-        }
-        
-        // 3. Three-character patterns (most common)
-        const commonThreeChar = [
-            'abc', 'def', 'ghi', 'jkl', 'mno', 'pqr', 'stu', 'vwx', 'yz1',
-            'www', 'web', 'app', 'api', 'dev', 'pro', 'tmp', 'new', 'old',
-            'doc', 'pdf', 'img', 'vid', 'aud', 'txt', 'htm', 'css', 'js1'
+        // Very limited set - only the most essential patterns that weren't covered
+        const essentialCandidates = [
+            // Numbers only
+            '1', '2', '3', '4', '5',
+            // Very common abbreviations
+            'tmp', 'temp', 'new', 'old', 'web', 'app', 'api',
+            // Common single/double letters
+            'aa', 'bb', 'cc', 'dd', 'xx', 'yy', 'zz'
         ];
-        commonThreeChar.forEach(c => candidates.add(c));
         
-        // 4. Common words and abbreviations
-        const commonWords = [
-            'admin', 'user', 'guest', 'public', 'private', 'shared', 'common',
-            'data', 'info', 'content', 'media', 'images', 'videos', 'audio',
-            'docs', 'files', 'archive', 'backup', 'temp', 'cache', 'log',
-            'config', 'settings', 'assets', 'resources', 'static', 'dynamic'
-        ];
-        commonWords.forEach(w => candidates.add(w));
+        // Filter out already found
+        const newCandidates = essentialCandidates.filter(c => !excludeFolders.includes(c));
         
-        // Convert to array and filter out already found
-        const candidateArray = Array.from(candidates).filter(c => !excludeFolders.includes(c));
+        console.log(`🔍 Testing only ${newCandidates.length} essential candidates (vs 1000+ in full brute force)`);
         
-        console.log(`🔍 Brute force checking ${candidateArray.length} candidates...`);
-        
-        // Process in very aggressive parallel batches
-        const batchSize = 50; // Larger batches for brute force
         const foundFolders = [];
         
-        for (let i = 0; i < candidateArray.length; i += batchSize) {
-            const batch = candidateArray.slice(i, i + batchSize);
+        // Process in small batches with delays
+        const batchSize = 3;
+        
+        for (let i = 0; i < newCandidates.length; i += batchSize) {
+            const batch = newCandidates.slice(i, i + batchSize);
             
             const batchPromises = batch.map(async (candidate) => {
                 const exists = await this.folderExistsFast(candidate);
@@ -1050,18 +1064,75 @@ class PresentationDashboard {
             results.forEach(result => {
                 if (result.status === 'fulfilled' && result.value) {
                     foundFolders.push(result.value);
-                    console.log(`🎯 Brute force found: ${result.value}`);
+                    console.log(`🎯 Limited brute force found: ${result.value}`);
                 }
             });
             
-            // Progress indicator for long scans
-            if (i % (batchSize * 5) === 0) {
-                console.log(`🔍 Brute force progress: ${i}/${candidateArray.length} (${Math.round(i/candidateArray.length*100)}%)`);
+            // Delay between batches
+            if (i + batchSize < newCandidates.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
         
-        console.log(`✅ Brute force scan found: ${foundFolders.length} additional folders`);
+        console.log(`✅ Limited brute force found: ${foundFolders.length} additional folders`);
         return foundFolders;
+    }
+
+    async conservativeScan() {
+        const discoveredFolders = [];
+        let requestCount = 0;
+        
+        // Step 1: Test only the most essential known folders (minimizes 404s)
+        const essentialFolders = [
+            'demo-presentation', 'business-presentation', 'tutorial-presentation',
+            'project-2024', 'presentation', 'slides', 'demo', 'project'
+        ];
+        
+        console.log(`🔍 Conservative Step 1: Testing ${essentialFolders.length} essential folders...`);
+        
+        for (const folder of essentialFolders) {
+            console.log(`🔎 Testing: ${folder}...`);
+            const exists = await this.folderExistsFast(folder);
+            requestCount += 2; // Each check tries 2 files
+            
+            if (exists) {
+                discoveredFolders.push(folder);
+                console.log(`✅ Found: ${folder}`);
+            } else {
+                console.log(`❌ Not found: ${folder}`);
+            }
+            
+            // Stop if we hit request limit
+            if (requestCount >= this.discoveryConfig.maxRequests) {
+                console.log(`🛑 Request limit reached (${requestCount}), stopping discovery`);
+                break;
+            }
+        }
+        
+        // Step 2: If we found very few, try a minimal set of additional patterns
+        if (discoveredFolders.length <= 1 && requestCount < this.discoveryConfig.maxRequests) {
+            console.log('🔍 Conservative Step 2: Testing minimal additional patterns...');
+            
+            const minimalAdditional = [
+                'presentation-1', 'slides-1', 'demo-1', 'project-1',
+                'my-presentation', 'new-presentation', 'test-presentation'
+            ];
+            
+            for (const folder of minimalAdditional) {
+                if (requestCount >= this.discoveryConfig.maxRequests) break;
+                
+                const exists = await this.folderExistsFast(folder);
+                requestCount += 2;
+                
+                if (exists) {
+                    discoveredFolders.push(folder);
+                    console.log(`✅ Found: ${folder}`);
+                }
+            }
+        }
+        
+        console.log(`✅ Conservative scan complete: ${discoveredFolders.length} folders found with ${requestCount} requests`);
+        return discoveredFolders;
     }
 
     async refreshDiscoveryInBackground() {
