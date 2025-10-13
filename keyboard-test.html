@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Navigation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            min-height: 100vh;
+        }
+        .test-info {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+        .key-display {
+            background: #333;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .slide-counter {
+            background: #4a5568;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 32px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Keyboard Navigation Test</h1>
+    
+    <div class="test-info">
+        <h2>Fixed Navigation Issues:</h2>
+        <p>✅ Removed duplicate keyboard listeners</p>
+        <p>✅ Added event capture and preventDefault</p>
+        <p>✅ Fixed URL updates to use replaceState</p>
+        <p>✅ Added boundary checks for navigation</p>
+        <p>✅ Improved state synchronization</p>
+    </div>
+
+    <div class="slide-counter" id="slideCounter">
+        Slide: 1 / 4
+    </div>
+
+    <div class="key-display" id="keyDisplay">
+        Press arrow keys to test navigation...
+    </div>
+
+    <div class="test-info">
+        <h3>Test These Keys:</h3>
+        <p><strong>← →</strong> Previous/Next slide</p>
+        <p><strong>Home/End</strong> First/Last slide</p>
+        <p><strong>Space</strong> Next slide</p>
+        <p><strong>F</strong> Toggle fullscreen</p>
+        <p><strong>T</strong> Toggle thumbnails</p>
+        <p><strong>ESC</strong> Exit fullscreen</p>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+        
+        function updateDisplay() {
+            document.getElementById('slideCounter').textContent = `Slide: ${currentSlide} / ${totalSlides}`;
+        }
+
+        function navigate(newSlide) {
+            if (newSlide >= 1 && newSlide <= totalSlides && newSlide !== currentSlide) {
+                console.log(`Navigate: ${currentSlide} → ${newSlide}`);
+                currentSlide = newSlide;
+                updateDisplay();
+                document.getElementById('keyDisplay').textContent = `Navigated to slide ${currentSlide}`;
+                return true;
+            } else {
+                console.log(`Invalid navigation: ${newSlide} (current: ${currentSlide})`);
+                document.getElementById('keyDisplay').textContent = `Invalid: slide ${newSlide}`;
+                return false;
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            const handledKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Home', 'End', 'f', 'F', 't', 'T', 'Escape'];
+            
+            if (handledKeys.includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            document.getElementById('keyDisplay').textContent = `Key pressed: ${e.key}`;
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    navigate(currentSlide - 1);
+                    break;
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case ' ':
+                    navigate(currentSlide + 1);
+                    break;
+                case 'Home':
+                    navigate(1);
+                    break;
+                case 'End':
+                    navigate(totalSlides);
+                    break;
+                case 'f':
+                case 'F':
+                    document.getElementById('keyDisplay').textContent = 'Fullscreen toggled';
+                    break;
+                case 't':
+                case 'T':
+                    document.getElementById('keyDisplay').textContent = 'Thumbnails toggled';
+                    break;
+                case 'Escape':
+                    document.getElementById('keyDisplay').textContent = 'Escape pressed';
+                    break;
+            }
+        }, true);
+
+        console.log('🎮 Keyboard navigation test ready!');
+        console.log('Fixed: Multiple event listeners, URL conflicts, state issues');
+    </script>
+</body>
+</html>
