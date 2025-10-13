@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Analysis - Business Strategy 2024</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 40px;
+            text-align: center;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .analysis-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .analysis-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #3498DB;
+            border-bottom: 2px solid #3498DB;
+            padding-bottom: 10px;
+        }
+
+        .trend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .trend-icon {
+            font-size: 1.5rem;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+        }
+
+        .trend-up { color: #2ECC71; }
+        .trend-down { color: #E74C3C; }
+        .trend-stable { color: #F39C12; }
+
+        .opportunities {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ECC71;
+        }
+
+        .challenges {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid #E74C3C;
+        }
+
+        .market-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 150px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498DB;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 20px; }
+            h1 { font-size: 2rem; }
+            .analysis-grid { 
+                grid-template-columns: 1fr; 
+                gap: 20px; 
+            }
+            .market-stats { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-content">
+        <h1>Market Analysis</h1>
+        
+        <div class="analysis-grid">
+            <div class="analysis-section opportunities">
+                <h2>🎯 Market Opportunities</h2>
+                <div class="trend-item">
+                    <span class="trend-icon trend-up">📈</span>
+                    <span>Digital transformation acceleration</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-icon trend-up">🌐</span>
+                    <span>Remote work technology demand</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-icon trend-up">📱</span>
+                    <span>Mobile-first customer preferences</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-icon trend-up">🤖</span>
+                    <span>AI and automation adoption</span>
+                </div>
+            </div>
+
+            <div class="analysis-section challenges">
+                <h2>⚠️ Market Challenges</h2>
+                <div class="trend-item">
+                    <span class="trend-icon trend-down">💰</span>
+                    <span>Economic uncertainty impacts</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-icon trend-down">🏭</span>
+                    <span>Supply chain disruptions</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-icon trend-stable">👥</span>
+                    <span>Talent acquisition competition</span>
+                </div>
+                <div class="trend-item">
+                    <span class="trend-icon trend-down">🔒</span>
+                    <span>Cybersecurity concerns</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="market-stats">
+            <div class="stat-item">
+                <div class="stat-number">$4.2B</div>
+                <div class="stat-label">Market Size</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">8.5%</div>
+                <div class="stat-label">Annual Growth</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">15%</div>
+                <div class="stat-label">Market Share</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">2.3M</div>
+                <div class="stat-label">Potential Customers</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

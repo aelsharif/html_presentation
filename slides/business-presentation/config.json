@@ -1,0 +1,35 @@
+{
+  "title": "Business Strategy 2024",
+  "description": "Annual business strategy presentation covering market analysis, goals, and roadmap",
+  "author": "Business Team",
+  "created": "2024-01-15",
+  "version": "1.0",
+  "thumbnail": null,
+  "slides": [
+    {
+      "number": 1,
+      "path": "01-overview.html",
+      "title": "Executive Overview",
+      "description": "High-level business overview and objectives"
+    },
+    {
+      "number": 2,
+      "path": "02-market-analysis.html", 
+      "title": "Market Analysis",
+      "description": "Current market conditions and opportunities"
+    },
+    {
+      "number": 3,
+      "path": "03-strategy.html",
+      "title": "Strategic Roadmap", 
+      "description": "Key strategic initiatives and timeline"
+    }
+  ],
+  "settings": {
+    "autoAdvance": false,
+    "slideTimer": 0,
+    "showThumbnails": true,
+    "allowFullscreen": true,
+    "keyboardNavigation": true
+  }
+}

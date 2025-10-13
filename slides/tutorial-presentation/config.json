@@ -1,0 +1,29 @@
+{
+  "title": "Web Development Tutorial",
+  "description": "Complete guide to modern web development using HTML, CSS, and JavaScript",
+  "author": "Tech Team",
+  "created": "2024-02-10",
+  "version": "1.0",
+  "thumbnail": null,
+  "slides": [
+    {
+      "number": 1,
+      "path": "01-introduction.html",
+      "title": "Introduction",
+      "description": "Getting started with web development"
+    },
+    {
+      "number": 2,
+      "path": "02-html-basics.html", 
+      "title": "HTML Fundamentals",
+      "description": "Basic HTML structure and elements"
+    }
+  ],
+  "settings": {
+    "autoAdvance": false,
+    "slideTimer": 0,
+    "showThumbnails": true,
+    "allowFullscreen": true,
+    "keyboardNavigation": true
+  }
+}

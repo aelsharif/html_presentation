@@ -93,6 +93,32 @@ body {
     align-items: center;
     justify-content: center;
     gap: 30px;
+    position: relative;
+}
+
+.dashboard-btn {
+    position: absolute;
+    left: 0;
+    background: linear-gradient(135deg, #FF6B35, #F7931E) !important;
+}
+
+.dashboard-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #E55A2B, #E8841A) !important;
+    border-color: #FF6B35 !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3) !important;
+}
+
+.presentation-title {
+    position: absolute;
+    right: 0;
+    font-size: 1rem;
+    color: #4CAF50;
+    font-weight: 500;
+    max-width: 200px;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Navigation buttons */
