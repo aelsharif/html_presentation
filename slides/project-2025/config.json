@@ -1,0 +1,23 @@
+{
+  "title": "Project 2025 Showcase",
+  "description": "Annual project showcase presentation with latest developments and achievements",
+  "author": "Project Team",
+  "created": "2024-12-01",
+  "version": "1.0",
+  "thumbnail": null,
+  "slides": [
+    {
+      "number": 1,
+      "path": "01-overview.html",
+      "title": "Project Overview",
+      "description": "High-level overview of 2024 projects"
+    }
+  ],
+  "settings": {
+    "autoAdvance": false,
+    "slideTimer": 0,
+    "showThumbnails": true,
+    "allowFullscreen": true,
+    "keyboardNavigation": true
+  }
+}

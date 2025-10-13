@@ -45,37 +45,65 @@ class PresentationDashboard {
 
     async loadPresentations() {
         this.showLoading();
-
+        
         try {
             const presentations = [];
-
-            // Add a timeout to the entire discovery process
-            const discoveryPromise = this.discoverPresentationFolders();
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Discovery timeout')), 15000) // 15 second timeout
+            
+            // Check cache first for faster subsequent loads
+            const cachedFolders = this.getCachedFolders();
+            if (cachedFolders && cachedFolders.length > 0) {
+                console.log(`🔄 Using cached folders: ${cachedFolders.length} folders`);
+                
+                // Process cached folders in parallel for faster loading
+                const cachedResults = await Promise.allSettled(
+                    cachedFolders.map(folderName => this.loadPresentationData(folderName))
+                );
+                
+                cachedResults.forEach(result => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        presentations.push(result.value);
+                    }
+                });
+                
+                // If we got presentations from cache, use them and refresh in background
+                if (presentations.length > 0) {
+                    this.presentations = presentations;
+                    this.filteredPresentations = [...presentations];
+                    this.updatePresentationCount();
+                    this.hideLoading();
+                    
+                    // Refresh discovery in background
+                    this.refreshDiscoveryInBackground();
+                    return;
+                }
+            }
+            
+            // Perform fast discovery with aggressive optimization
+            const discoveryPromise = this.discoverPresentationFoldersFast();
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Discovery timeout')), 15000) // Allow time for comprehensive scan
             );
-
+            
             let discoveredFolders = [];
             try {
                 discoveredFolders = await Promise.race([discoveryPromise, timeoutPromise]);
+                this.cacheFolders(discoveredFolders); // Cache results
             } catch (error) {
                 console.warn('Presentation discovery timed out, using fallback method');
                 // Fallback to just checking our known presentations
                 discoveredFolders = ['demo-presentation', 'business-presentation', 'tutorial-presentation'];
             }
-
-            // Process each discovered folder
-            for (const folderName of discoveredFolders) {
-                try {
-                    const presentationData = await this.loadPresentationData(folderName);
-                    if (presentationData) {
-                        presentations.push(presentationData);
-                    }
-                } catch (error) {
-                    console.log(`Skipping invalid presentation folder: ${folderName}`, error);
-                    continue;
+            
+            // Process discovered folders in parallel for much faster loading
+            const results = await Promise.allSettled(
+                discoveredFolders.map(folderName => this.loadPresentationData(folderName))
+            );
+            
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    presentations.push(result.value);
                 }
-            }
+            });
 
             // If no presentations found, create a default demo
             if (presentations.length === 0) {
@@ -88,7 +116,7 @@ class PresentationDashboard {
             this.presentations = presentations;
             this.filteredPresentations = [...presentations];
             this.updatePresentationCount();
-
+            
             // Log discovery results for debugging
             console.log(`Presentation Discovery Summary:`, {
                 totalFoldersFound: presentations.length,
@@ -109,18 +137,40 @@ class PresentationDashboard {
         this.hideLoading();
     }
 
+    async discoverPresentationFoldersFast() {
+        console.log('🚀 Starting COMPREHENSIVE & FAST presentation discovery...');
+        const startTime = performance.now();
+        
+        // Strategy 1: Try to get directory listing directly (fastest if supported)
+        let discoveredFolders = await this.tryDirectoryListing();
+        
+        if (discoveredFolders.length > 0) {
+            const endTime = performance.now();
+            console.log(`🎯 Directory listing found ${discoveredFolders.length} folders in ${Math.round(endTime - startTime)}ms`);
+            return discoveredFolders;
+        }
+
+        // Strategy 2: Comprehensive parallel scanning with intelligent patterns
+        console.log('📁 Directory listing not available, using comprehensive parallel scan...');
+        discoveredFolders = await this.comprehensiveParallelScan();
+
+        const endTime = performance.now();
+        console.log(`🎯 Comprehensive discovery complete: Found ${discoveredFolders.length} folders in ${Math.round(endTime - startTime)}ms`);
+        return discoveredFolders;
+    }
+
     async discoverPresentationFolders() {
         const discoveredFolders = [];
-
+        
         // Strategy 1: Try known existing folder names first (most likely to succeed)
         const priorityNames = [
             'demo-presentation',
-            'business-presentation',
+            'business-presentation', 
             'tutorial-presentation'
         ];
 
         console.log('🔍 Starting presentation discovery...');
-
+        
         for (const folderName of priorityNames) {
             if (await this.folderExists(folderName)) {
                 discoveredFolders.push(folderName);
@@ -131,7 +181,7 @@ class PresentationDashboard {
         // Strategy 2: Try other common patterns (limited set to avoid too many requests)
         const commonPatterns = [
             'sample-presentation',
-            'my-presentation',
+            'my-presentation', 
             'presentation-1',
             'presentation-2',
             'slides-1',
@@ -162,143 +212,151 @@ class PresentationDashboard {
 
     async scanFoldersWithRegexPatterns() {
         const foundFolders = [];
-
-        // Define regex patterns for common presentation folder naming conventions
-        const prefixPatterns = [
-            // Core presentation patterns
-            /^(pres|presentation|presentations?)(-|_|\d|$)/i,
+        
+        // Streamlined regex patterns - focus on most common only
+        const corePatterns = [
+            /^(presentation|presentations?)(-|_|\d|$)/i,
             /^(slide|slides)(-|_|\d|$)/i,
-            /^(deck|decks?)(-|_|\d|$)/i,
-            /^(talk|talks?)(-|_|\d|$)/i,
-            /^(demo|demos?)(-|_|\d|$)/i,
-            /^(show|shows?)(-|_|\d|$)/i,
-
-            // Project and content patterns
-            /^(project|projects?)(-|_|\d|$)/i,
-            /^(content|contents?)(-|_|\d|$)/i,
-            /^(material|materials?)(-|_|\d|$)/i,
-            /^(training|course|tutorial)(-|_|\d|$)/i,
-
-            // Event and topic patterns
-            /^(meeting|conference|workshop)(-|_|\d|$)/i,
-            /^(report|reports?)(-|_|\d|$)/i,
-            /^(pitch|pitches?)(-|_|\d|$)/i,
-            /^(intro|introduction)(-|_|\d|$)/i,
-            /^(final|conclusion)(-|_|\d|$)/i,
-
-            // Date-based patterns
-            /^(202[0-9]|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(-|_)/i,
-
-            // Generic numbered patterns
-            /^[a-z]+\d+$/i,
-            /^[a-z]+-\d+$/i,
-            /^[a-z]+_\d+$/i
+            /^(deck|demo)(-|_|\d|$)/i,
+            /^(project)(-|_|\d|$)/i
         ];
 
-        console.log('🔍 Starting regex-based folder scanning...');
+        console.log('🔍 Starting optimized regex-based folder scanning...');
 
-        // Generate potential folder names based on patterns and test them
+        // Dramatically reduced candidate generation (50 vs 600+)
         const candidateFolders = this.generateCandidateFolders();
-        console.log(`📝 Generated ${candidateFolders.length} candidate folders to test`);
-
-        for (const folderName of candidateFolders) {
-            // Check if folder name matches any of our patterns
-            const matchesPattern = prefixPatterns.some(pattern => pattern.test(folderName));
-
-            if (matchesPattern && await this.folderExists(folderName, true)) { // Quick check for regex scanning
-                foundFolders.push(folderName);
-                console.log(`🎯 Regex match found: ${folderName}`);
-            }
+        console.log(`📝 Generated ${candidateFolders.length} candidate folders to test (optimized)`);
+        
+        // Process candidates in parallel batches for speed
+        const batchSize = 6;
+        for (let i = 0; i < candidateFolders.length; i += batchSize) {
+            const batch = candidateFolders.slice(i, i + batchSize);
+            
+            const batchChecks = batch.map(async (folderName) => {
+                // Quick pattern check first
+                const matchesPattern = corePatterns.some(pattern => pattern.test(folderName));
+                if (!matchesPattern) return null;
+                
+                const exists = await this.folderExistsFast(folderName);
+                return exists ? folderName : null;
+            });
+            
+            const batchResults = await Promise.allSettled(batchChecks);
+            batchResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    foundFolders.push(result.value);
+                    console.log(`🎯 Regex match found: ${result.value}`);
+                }
+            });
         }
 
-        // Also try systematic generation based on regex patterns
-        await this.systematicRegexScan(prefixPatterns, foundFolders);
-
-        console.log(`📊 Regex scan complete: Found ${foundFolders.length} additional folders`);
+        console.log(`📊 Optimized regex scan complete: Found ${foundFolders.length} additional folders`);
         return foundFolders;
     }
 
     generateCandidateFolders() {
         const candidates = [];
+        
+        // Drastically reduced set - focus on most common patterns only
+        const coreNames = ['presentation', 'slide', 'deck', 'demo', 'project'];
 
-        // Common base names
-        const baseNames = [
-            'presentation', 'slide', 'deck', 'talk', 'demo', 'show',
-            'project', 'content', 'material', 'training', 'course',
-            'meeting', 'workshop', 'report', 'pitch', 'intro', 'final'
-        ];
-
-        // Generate variations
-        for (const base of baseNames) {
-            // Simple numbered versions
-            for (let i = 1; i <= 5; i++) {
+        // Generate only the most likely variations (reduced from 600+ to ~50)
+        for (const base of coreNames) {
+            // Just 1-3 numbered versions (most common)
+            for (let i = 1; i <= 3; i++) {
                 candidates.push(`${base}${i}`);
                 candidates.push(`${base}-${i}`);
-                candidates.push(`${base}_${i}`);
-                candidates.push(`${base}s${i}`); // plural version
-                candidates.push(`${base}s-${i}`);
             }
-
-            // Lettered versions
-            for (const letter of ['a', 'b', 'c']) {
-                candidates.push(`${base}-${letter}`);
-                candidates.push(`${base}_${letter}`);
-            }
-
-            // Date suffixes
+            
+            // Only current year (most relevant)
             const currentYear = new Date().getFullYear();
             candidates.push(`${base}-${currentYear}`);
-            candidates.push(`${base}-${currentYear - 1}`);
-            candidates.push(`${base}_${currentYear}`);
         }
 
-        // Add year-based patterns
-        const years = [2023, 2024, 2025];
-        const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-
-        for (const year of years) {
-            candidates.push(`${year}-presentation`);
-            candidates.push(`presentation-${year}`);
-
-            for (let i = 0; i < 3; i++) { // Just first 3 months to limit requests
-                candidates.push(`${months[i]}-${year}`);
-                candidates.push(`${year}-${months[i]}`);
-            }
-        }
-
-        return [...new Set(candidates)]; // Remove duplicates
+        // Add a few high-probability patterns
+        const highProbability = [
+            'my-presentation', 'test-presentation', 'new-slides',
+            'main-presentation', 'sample-slides', 'example-deck'
+        ];
+        
+        candidates.push(...highProbability);
+        return [...new Set(candidates)]; // Remove duplicates - now ~50 instead of 600+
     }
 
     async systematicRegexScan(patterns, foundFolders) {
-        // Generate folder names systematically based on regex patterns
-        const prefixBases = [
-            'pres', 'presentation', 'slide', 'slides', 'deck', 'talk', 'demo',
-            'project', 'content', 'training', 'meeting', 'workshop', 'report'
-        ];
+        // Streamlined systematic scan - only check most likely patterns
+        const coreBases = ['presentation', 'slide', 'deck', 'demo'];
 
-        for (const base of prefixBases) {
-            // Test variations that would match our regex patterns
-            const variations = [
+        const variations = [];
+        for (const base of coreBases) {
+            // Only the most common variations
+            variations.push(
                 base,
                 `${base}s`, // plural
-                `${base}-1`, `${base}-2`, `${base}-3`,
-                `${base}_1`, `${base}_2`, `${base}_3`,
-                `${base}1`, `${base}2`, `${base}3`,
-                `${base}-presentation`,
-                `${base}-slides`,
-                `${base}-content`
-            ];
+                `${base}-1`, `${base}-2`,
+                `${base}1`, `${base}2`
+            );
+        }
 
-            for (const variation of variations) {
-                if (!foundFolders.includes(variation) && await this.folderExists(variation, true)) { // Quick check for systematic scan
-                    // Double-check it matches our patterns
-                    const matchesPattern = patterns.some(pattern => pattern.test(variation));
-                    if (matchesPattern) {
-                        foundFolders.push(variation);
-                        console.log(`🔍 Systematic scan found: ${variation}`);
-                    }
+        // Process variations in parallel batches
+        const batchSize = 8;
+        for (let i = 0; i < variations.length; i += batchSize) {
+            const batch = variations.slice(i, i + batchSize);
+            
+            const batchChecks = batch.map(async (variation) => {
+                if (foundFolders.includes(variation)) return null;
+                
+                const exists = await this.folderExistsFast(variation);
+                if (!exists) return null;
+                
+                // Double-check it matches our patterns
+                const matchesPattern = patterns.some(pattern => pattern.test(variation));
+                return matchesPattern ? variation : null;
+            });
+            
+            const batchResults = await Promise.allSettled(batchChecks);
+            batchResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    foundFolders.push(result.value);
+                    console.log(`🔍 Systematic scan found: ${result.value}`);
                 }
-            }
+            });
+        }
+    }
+
+    async folderExistsFast(folderName) {
+        // Ultra-fast check - try both paths in parallel
+        const testPaths = [
+            `slides/${folderName}/config.json`,
+            `slides/${folderName}/01.html`
+        ];
+        
+        try {
+            // Check both paths simultaneously
+            const promises = testPaths.map(async (testPath) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 400); // Very aggressive timeout
+                
+                try {
+                    const response = await fetch(testPath, { 
+                        signal: controller.signal,
+                        method: 'GET'
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    return response.ok;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    return false;
+                }
+            });
+            
+            // Return true if ANY path succeeds
+            const results = await Promise.allSettled(promises);
+            return results.some(result => result.status === 'fulfilled' && result.value);
+            
+        } catch (error) {
+            return false;
         }
     }
 
@@ -319,38 +377,23 @@ class PresentationDashboard {
             for (const path of testPaths) {
                 try {
                     // Shorter timeout for quick checks
-                    const timeoutMs = quickCheck ? 1500 : 3000;
+                    const timeoutMs = quickCheck ? 1000 : 2000; // Reduced timeouts
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-                    const response = await fetch(path, {
+                    
+                    // Use GET directly since server returns 405 for HEAD
+                    const response = await fetch(path, { 
                         signal: controller.signal,
-                        method: 'HEAD' // Try HEAD first for faster response
+                        method: 'GET'
                     });
-
+                    
                     clearTimeout(timeoutId);
-
+                    
                     if (response.ok) {
                         return true;
                     }
                 } catch (error) {
-                    // If HEAD fails with 405, try GET (but only for non-quick checks)
-                    if (error.name !== 'AbortError' && !quickCheck) {
-                        try {
-                            const controller = new AbortController();
-                            const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-                            const response = await fetch(path, { signal: controller.signal });
-                            clearTimeout(timeoutId);
-
-                            if (response.ok) {
-                                return true;
-                            }
-                        } catch (getError) {
-                            // Continue to next path
-                            continue;
-                        }
-                    }
+                    // Continue to next path on any error
                     continue;
                 }
             }
@@ -365,7 +408,7 @@ class PresentationDashboard {
             // Try to load config.json first
             const configResponse = await fetch(`slides/${folderName}/config.json`);
             let config = {};
-
+            
             if (configResponse.ok) {
                 config = await configResponse.json();
             } else {
@@ -380,7 +423,7 @@ class PresentationDashboard {
 
             // Count slides in the presentation
             const slideCount = await this.countSlides(folderName);
-
+            
             // Only return if we found at least one slide
             if (slideCount > 0) {
                 return {
@@ -403,10 +446,10 @@ class PresentationDashboard {
 
     generateTitleFromFolderName(folderName) {
         let title = folderName;
-
+        
         // Handle different separators (hyphens, underscores)
         title = title.replace(/[-_]/g, ' ');
-
+        
         // Split into words and capitalize each word
         title = title.split(/\s+/)
             .map(word => {
@@ -418,30 +461,30 @@ class PresentationDashboard {
                 return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
             })
             .join(' ');
-
+            
         // Add space between letters and numbers
         title = title.replace(/([a-z])(\d)/gi, '$1 $2');
         title = title.replace(/(\d)([a-z])/gi, '$1 $2');
-
+        
         // Handle camelCase
         title = title.replace(/([a-z])([A-Z])/g, '$1 $2');
-
+        
         // Clean up multiple spaces
         title = title.replace(/\s+/g, ' ').trim();
-
+        
         // Add "Presentation" suffix if it doesn't already contain presentation-related words
         const presentationWords = ['presentation', 'slide', 'deck', 'talk', 'demo', 'show'];
-        const hasPresWord = presentationWords.some(word =>
+        const hasPresWord = presentationWords.some(word => 
             title.toLowerCase().includes(word)
         );
-
+        
         if (!hasPresWord) {
             title += ' Presentation';
         }
-
+        
         return title;
     }
-
+    
     expandAbbreviation(abbrev) {
         const expansions = {
             'pres': 'Presentation',
@@ -453,18 +496,18 @@ class PresentationDashboard {
             'work': 'Workshop',
             'train': 'Training'
         };
-
+        
         return expansions[abbrev] || abbrev.charAt(0).toUpperCase() + abbrev.slice(1);
     }
 
     async createDefaultPresentation() {
         // Try to create/find a demo presentation if none exist
         const demoFolderExists = await this.folderExists('demo-presentation');
-
+        
         if (demoFolderExists) {
             return await this.loadPresentationData('demo-presentation');
         }
-
+        
         // Return a placeholder if no presentations exist at all
         return {
             id: 'placeholder',
@@ -481,7 +524,7 @@ class PresentationDashboard {
 
     async countSlides(presentationFolder) {
         let count = 0;
-
+        
         // Strategy 1: Check config.json for slide count
         try {
             const configResponse = await fetch(`slides/${presentationFolder}/config.json`);
@@ -500,7 +543,7 @@ class PresentationDashboard {
             // Standard numbered patterns
             (i) => `slides/${presentationFolder}/${i.toString().padStart(2, '0')}.html`,
             (i) => `slides/${presentationFolder}/${i}.html`,
-            // Named patterns
+            // Named patterns  
             (i) => `slides/${presentationFolder}/${i.toString().padStart(2, '0')}-slide.html`,
             (i) => `slides/${presentationFolder}/${i.toString().padStart(2, '0')}-intro.html`,
             (i) => `slides/${presentationFolder}/${i.toString().padStart(2, '0')}-content.html`,
@@ -512,7 +555,7 @@ class PresentationDashboard {
         // Check up to 50 potential slides
         for (let i = 1; i <= 50; i++) {
             let foundSlideForNumber = false;
-
+            
             for (const patternFunc of slidePatterns) {
                 try {
                     const testPath = patternFunc(i);
@@ -526,7 +569,7 @@ class PresentationDashboard {
                     continue;
                 }
             }
-
+            
             // If we didn't find a slide for this number, check a few more before giving up
             if (!foundSlideForNumber && i > 5) {
                 // Allow some gaps, but if we haven't found anything in the last 5 numbers, stop
@@ -546,7 +589,7 @@ class PresentationDashboard {
                     }
                     if (foundInNext5) break;
                 }
-
+                
                 if (!foundInNext5) {
                     break; // No more slides found, stop counting
                 }
@@ -557,12 +600,12 @@ class PresentationDashboard {
         if (count === 0) {
             const singleFileNames = [
                 'index.html',
-                'slide.html',
+                'slide.html', 
                 'presentation.html',
                 'main.html',
                 'content.html'
             ];
-
+            
             for (const fileName of singleFileNames) {
                 try {
                     const response = await fetch(`slides/${presentationFolder}/${fileName}`);
@@ -579,9 +622,464 @@ class PresentationDashboard {
         return Math.max(count, 0); // Return actual count, can be 0 if no slides found
     }
 
+    async smartPatternScan() {
+        console.log('🔍 Starting smart pattern scan...');
+        const foundFolders = [];
+        
+        // Reduced set of most likely patterns based on common naming conventions
+        const smartPatterns = [
+            // Direct numbered variations (most common)
+            'presentation1', 'presentation2', 'presentation3',
+            'slides1', 'slides2', 'slides3',
+            'deck1', 'deck2', 'demo1', 'demo2',
+            
+            // Hyphenated variations
+            'presentation-demo', 'presentation-test', 'presentation-new',
+            'slides-demo', 'slides-test', 'demo-slides',
+            
+            // Year-based (most likely current year)
+            `presentation-${new Date().getFullYear()}`,
+            `slides-${new Date().getFullYear()}`,
+            `${new Date().getFullYear()}-presentation`,
+            
+            // Project patterns
+            'project-demo', 'project-presentation', 'project1',
+            
+            // Common prefixes with separators
+            'my-slides', 'test-presentation', 'main-presentation',
+            'new-presentation', 'final-presentation'
+        ];
+
+        // Check patterns in parallel batches to avoid overwhelming the server
+        const batchSize = 8; // Process 8 at a time
+        for (let i = 0; i < smartPatterns.length; i += batchSize) {
+            const batch = smartPatterns.slice(i, i + batchSize);
+            
+            const batchChecks = batch.map(async (pattern) => {
+                const exists = await this.folderExistsFast(pattern);
+                return exists ? pattern : null;
+            });
+            
+            const batchResults = await Promise.allSettled(batchChecks);
+            batchResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    foundFolders.push(result.value);
+                    console.log(`✅ Smart scan found: ${result.value}`);
+                }
+            });
+            
+            // Small delay between batches to be nice to the server
+            if (i + batchSize < smartPatterns.length) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+        }
+
+        console.log(`📊 Smart scan complete: Found ${foundFolders.length} additional folders`);
+        return foundFolders;
+    }
+
+    // Caching methods for faster subsequent loads
+    getCachedFolders() {
+        try {
+            const cached = localStorage.getItem('presentation_folders_cache');
+            if (cached) {
+                const data = JSON.parse(cached);
+                const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                
+                if (data.timestamp > fiveMinutesAgo) {
+                    return data.folders;
+                }
+            }
+        } catch (error) {
+            console.log('Cache read error:', error);
+        }
+        return null;
+    }
+
+    cacheFolders(folders) {
+        try {
+            const cacheData = {
+                folders: folders,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('presentation_folders_cache', JSON.stringify(cacheData));
+            console.log(`📦 Cached ${folders.length} folders for faster loading`);
+        } catch (error) {
+            console.log('Cache write error:', error);
+        }
+    }
+
+    async tryDirectoryListing() {
+        try {
+            // Try to fetch the slides directory index
+            console.log('🔍 Attempting directory listing of slides/...');
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            
+            const response = await fetch('slides/', { 
+                signal: controller.signal 
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+                const html = await response.text();
+                const folders = this.extractFoldersFromHTML(html);
+                
+                if (folders.length > 0) {
+                    console.log(`✅ Directory listing found ${folders.length} potential folders:`, folders);
+                    
+                    // Verify these are actual presentation folders in parallel
+                    const verificationPromises = folders.map(async (folder) => {
+                        const isValid = await this.folderExistsFast(folder);
+                        return isValid ? folder : null;
+                    });
+                    
+                    const verificationResults = await Promise.allSettled(verificationPromises);
+                    const validFolders = verificationResults
+                        .filter(result => result.status === 'fulfilled' && result.value)
+                        .map(result => result.value);
+                    
+                    return validFolders;
+                }
+            }
+        } catch (error) {
+            console.log('📁 Directory listing not available:', error.message);
+        }
+        
+        return [];
+    }
+
+    extractFoldersFromHTML(html) {
+        const folders = [];
+        
+        // Common patterns for directory listings
+        const patterns = [
+            // Apache/Nginx style
+            /<a href="([^"]+)\/">/g,
+            // IIS style
+            /<A HREF="([^"]+)\/">/gi,
+            // Generic link patterns
+            /href="([^"\/]+)\/"[^>]*>([^<]+)/gi
+        ];
+        
+        for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(html)) !== null) {
+                const folderName = match[1];
+                
+                // Filter out parent directory and hidden folders
+                if (folderName && 
+                    folderName !== '..' && 
+                    folderName !== '.' && 
+                    !folderName.startsWith('.') &&
+                    folderName.match(/^[a-zA-Z0-9_-]+$/)) {
+                    
+                    folders.push(folderName);
+                }
+            }
+        }
+        
+        return [...new Set(folders)]; // Remove duplicates
+    }
+
+    async comprehensiveParallelScan() {
+        const discoveredFolders = [];
+        
+        // Strategy 1: Known patterns (high priority, parallel)
+        const knownPatterns = await this.scanKnownPatterns();
+        discoveredFolders.push(...knownPatterns);
+        
+        // Strategy 2: Systematic alphabet scan (comprehensive coverage)
+        const alphabetScan = await this.systematicAlphabetScan(discoveredFolders);
+        discoveredFolders.push(...alphabetScan);
+        
+        // Strategy 3: Common word combinations
+        const wordCombinations = await this.scanWordCombinations(discoveredFolders);
+        discoveredFolders.push(...wordCombinations);
+        
+        // Strategy 4: Ultimate fallback - comprehensive brute force (if still few found)
+        if (discoveredFolders.length < 5) {
+            console.log('🔍 Running comprehensive brute force scan as fallback...');
+            const bruteForceFolders = await this.comprehensiveBruteForce(discoveredFolders);
+            discoveredFolders.push(...bruteForceFolders);
+        }
+        
+        return [...new Set(discoveredFolders)]; // Remove duplicates
+    }
+
+    async scanKnownPatterns() {
+        console.log('🔍 Scanning known presentation patterns...');
+        
+        // Priority 1: Absolute highest priority (known existing folders)
+        const absolutePriority = [
+            'demo-presentation', 'business-presentation', 'tutorial-presentation'
+        ];
+        
+        // Priority 2: Year-based patterns (project-2024 type)
+        const currentYear = new Date().getFullYear();
+        const yearBasedPatterns = [
+            `project-${currentYear}`, `project-${currentYear - 1}`, `project-${currentYear + 1}`,
+            `presentation-${currentYear}`, `slides-${currentYear}`, 
+            `demo-${currentYear}`, `test-${currentYear}`,
+            `${currentYear}`, `${currentYear-1}`, `${currentYear+1}`,
+            `${currentYear}-project`, `${currentYear}-presentation`, `${currentYear}-slides`
+        ];
+        
+        // Priority 3: Common naming patterns
+        const commonPatterns = [
+            'presentation', 'presentations', 'slides', 'slide', 'deck', 'decks',
+            'demo', 'demos', 'sample', 'example', 'test', 'main', 'default',
+            'project', 'projects', 'my-presentation', 'my-slides',
+            'new-presentation', 'final-presentation', 'test-presentation',
+            'meeting', 'conference', 'workshop', 'seminar', 'training',
+            'report', 'pitch', 'intro', 'overview', 'summary'
+        ];
+        
+        // Priority 4: Numbered variations
+        const numberedPatterns = [
+            ...Array.from({length: 10}, (_, i) => `presentation${i + 1}`),
+            ...Array.from({length: 10}, (_, i) => `presentation-${i + 1}`),
+            ...Array.from({length: 10}, (_, i) => `slides${i + 1}`),
+            ...Array.from({length: 10}, (_, i) => `slides-${i + 1}`),
+            ...Array.from({length: 5}, (_, i) => `deck${i + 1}`),
+            ...Array.from({length: 5}, (_, i) => `demo${i + 1}`),
+            ...Array.from({length: 5}, (_, i) => `project${i + 1}`),
+            ...Array.from({length: 5}, (_, i) => `project-${i + 1}`)
+        ];
+        
+        const foundFolders = [];
+        
+        // Scan in priority order with smaller batches for critical ones
+        const priorityGroups = [
+            { patterns: absolutePriority, batchSize: 3, delay: 0 },
+            { patterns: yearBasedPatterns, batchSize: 8, delay: 5 },
+            { patterns: commonPatterns, batchSize: 10, delay: 10 },
+            { patterns: numberedPatterns, batchSize: 15, delay: 20 }
+        ];
+        
+        for (const group of priorityGroups) {
+            console.log(`🔍 Scanning ${group.patterns.length} patterns in group...`);
+            
+            for (let i = 0; i < group.patterns.length; i += group.batchSize) {
+                const batch = group.patterns.slice(i, i + group.batchSize);
+                
+                const batchPromises = batch.map(async (pattern) => {
+                    const exists = await this.folderExistsFast(pattern);
+                    return exists ? pattern : null;
+                });
+                
+                const results = await Promise.allSettled(batchPromises);
+                results.forEach(result => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        foundFolders.push(result.value);
+                        console.log(`✅ Found: ${result.value}`);
+                    }
+                });
+                
+                // Delay between batches
+                if (i + group.batchSize < group.patterns.length && group.delay > 0) {
+                    await new Promise(resolve => setTimeout(resolve, group.delay));
+                }
+            }
+        }
+        
+        console.log(`✅ Known patterns scan found: ${foundFolders.length} folders`);
+        return foundFolders;
+    }
+
+    async systematicAlphabetScan(excludeFolders) {
+        console.log('🔍 Running systematic alphabet scan for complete coverage...');
+        
+        const candidates = [];
+        
+        // Single letter combinations
+        const letters = 'abcdefghijklmnopqrstuvwxyz';
+        for (const letter of letters) {
+            candidates.push(letter);
+            candidates.push(`${letter}${letter}`); // aa, bb, cc, etc.
+        }
+        
+        // Two letter combinations (common ones)
+        const commonTwoLetters = ['ab', 'cd', 'ef', 'gh', 'ij', 'kl', 'mn', 'op', 'qr', 'st', 'uv', 'wx', 'yz'];
+        candidates.push(...commonTwoLetters);
+        
+        // Common prefixes with numbers
+        const prefixes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+        for (const prefix of prefixes) {
+            for (let i = 1; i <= 5; i++) {
+                candidates.push(`${prefix}${i}`);
+                candidates.push(`${prefix}-${i}`);
+                candidates.push(`${prefix}_${i}`);
+            }
+        }
+        
+        // Filter out already found folders
+        const newCandidates = candidates.filter(c => !excludeFolders.includes(c));
+        
+        // Process in parallel with aggressive batching
+        const batchSize = 20;
+        const foundFolders = [];
+        
+        for (let i = 0; i < newCandidates.length; i += batchSize) {
+            const batch = newCandidates.slice(i, i + batchSize);
+            
+            const batchPromises = batch.map(async (candidate) => {
+                const exists = await this.folderExistsFast(candidate);
+                return exists ? candidate : null;
+            });
+            
+            const results = await Promise.allSettled(batchPromises);
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    foundFolders.push(result.value);
+                    console.log(`✅ Alphabet scan found: ${result.value}`);
+                }
+            });
+        }
+        
+        console.log(`✅ Alphabet scan found: ${foundFolders.length} additional folders`);
+        return foundFolders;
+    }
+
+    async scanWordCombinations(excludeFolders) {
+        console.log('🔍 Scanning word combinations...');
+        
+        const words = ['my', 'new', 'old', 'temp', 'tmp', 'backup', 'draft', 'final', 'work', 'home', 'docs', 'files'];
+        const bases = ['presentation', 'slides', 'deck', 'demo', 'project'];
+        
+        const combinations = [];
+        
+        // Word + base combinations
+        for (const word of words) {
+            for (const base of bases) {
+                combinations.push(`${word}-${base}`);
+                combinations.push(`${word}_${base}`);
+                combinations.push(`${base}-${word}`);
+                combinations.push(`${base}_${word}`);
+            }
+        }
+        
+        // Filter out already found
+        const newCombinations = combinations.filter(c => !excludeFolders.includes(c));
+        
+        // Process in parallel
+        const batchSize = 15;
+        const foundFolders = [];
+        
+        for (let i = 0; i < newCombinations.length; i += batchSize) {
+            const batch = newCombinations.slice(i, i + batchSize);
+            
+            const batchPromises = batch.map(async (combination) => {
+                const exists = await this.folderExistsFast(combination);
+                return exists ? combination : null;
+            });
+            
+            const results = await Promise.allSettled(batchPromises);
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    foundFolders.push(result.value);
+                    console.log(`✅ Word combination found: ${result.value}`);
+                }
+            });
+        }
+        
+        console.log(`✅ Word combinations found: ${foundFolders.length} additional folders`);
+        return foundFolders;
+    }
+
+    async comprehensiveBruteForce(excludeFolders) {
+        console.log('🔍 Running comprehensive brute force scan (last resort)...');
+        
+        const candidates = new Set();
+        
+        // 1. All single characters and numbers
+        for (let i = 0; i < 26; i++) {
+            candidates.add(String.fromCharCode(97 + i)); // a-z
+        }
+        for (let i = 0; i <= 99; i++) {
+            candidates.add(i.toString()); // 0-99
+        }
+        
+        // 2. Common two-character combinations
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < chars.length; i++) {
+            for (let j = 0; j < chars.length; j++) {
+                if (i !== j) { // Avoid aa, bb, etc. (already covered)
+                    candidates.add(chars[i] + chars[j]);
+                }
+            }
+        }
+        
+        // 3. Three-character patterns (most common)
+        const commonThreeChar = [
+            'abc', 'def', 'ghi', 'jkl', 'mno', 'pqr', 'stu', 'vwx', 'yz1',
+            'www', 'web', 'app', 'api', 'dev', 'pro', 'tmp', 'new', 'old',
+            'doc', 'pdf', 'img', 'vid', 'aud', 'txt', 'htm', 'css', 'js1'
+        ];
+        commonThreeChar.forEach(c => candidates.add(c));
+        
+        // 4. Common words and abbreviations
+        const commonWords = [
+            'admin', 'user', 'guest', 'public', 'private', 'shared', 'common',
+            'data', 'info', 'content', 'media', 'images', 'videos', 'audio',
+            'docs', 'files', 'archive', 'backup', 'temp', 'cache', 'log',
+            'config', 'settings', 'assets', 'resources', 'static', 'dynamic'
+        ];
+        commonWords.forEach(w => candidates.add(w));
+        
+        // Convert to array and filter out already found
+        const candidateArray = Array.from(candidates).filter(c => !excludeFolders.includes(c));
+        
+        console.log(`🔍 Brute force checking ${candidateArray.length} candidates...`);
+        
+        // Process in very aggressive parallel batches
+        const batchSize = 50; // Larger batches for brute force
+        const foundFolders = [];
+        
+        for (let i = 0; i < candidateArray.length; i += batchSize) {
+            const batch = candidateArray.slice(i, i + batchSize);
+            
+            const batchPromises = batch.map(async (candidate) => {
+                const exists = await this.folderExistsFast(candidate);
+                return exists ? candidate : null;
+            });
+            
+            const results = await Promise.allSettled(batchPromises);
+            results.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    foundFolders.push(result.value);
+                    console.log(`🎯 Brute force found: ${result.value}`);
+                }
+            });
+            
+            // Progress indicator for long scans
+            if (i % (batchSize * 5) === 0) {
+                console.log(`🔍 Brute force progress: ${i}/${candidateArray.length} (${Math.round(i/candidateArray.length*100)}%)`);
+            }
+        }
+        
+        console.log(`✅ Brute force scan found: ${foundFolders.length} additional folders`);
+        return foundFolders;
+    }
+
+    async refreshDiscoveryInBackground() {
+        // Refresh discovery without blocking UI
+        setTimeout(async () => {
+            try {
+                const freshFolders = await this.discoverPresentationFoldersFast();
+                this.cacheFolders(freshFolders);
+                console.log('🔄 Background refresh completed');
+            } catch (error) {
+                console.log('Background refresh failed:', error);
+            }
+        }, 1000);
+    }
+
     filterPresentations(searchTerm) {
         const term = searchTerm.toLowerCase();
-        this.filteredPresentations = this.presentations.filter(presentation =>
+        this.filteredPresentations = this.presentations.filter(presentation => 
             presentation.title.toLowerCase().includes(term) ||
             presentation.description.toLowerCase().includes(term) ||
             presentation.author.toLowerCase().includes(term)
@@ -591,21 +1089,21 @@ class PresentationDashboard {
 
     setView(viewType) {
         this.currentView = viewType;
-
+        
         // Update button states
         this.gridViewBtn.classList.toggle('active', viewType === 'grid');
         this.listViewBtn.classList.toggle('active', viewType === 'list');
-
+        
         // Update grid class
         this.presentationsGrid.classList.toggle('list-view', viewType === 'list');
     }
 
     renderPresentations() {
         // Filter out placeholder presentations with 0 slides
-        const validPresentations = this.filteredPresentations.filter(p =>
+        const validPresentations = this.filteredPresentations.filter(p => 
             p.slideCount > 0 && p.id !== 'placeholder'
         );
-
+        
         if (validPresentations.length === 0) {
             this.showEmptyState();
             return;
@@ -613,7 +1111,7 @@ class PresentationDashboard {
 
         this.hideEmptyState();
 
-        const presentationsHTML = validPresentations.map(presentation =>
+        const presentationsHTML = validPresentations.map(presentation => 
             this.createPresentationCard(presentation)
         ).join('');
 
@@ -637,16 +1135,16 @@ class PresentationDashboard {
             'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
             'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
         ];
-
+        
         const gradient = gradients[Math.abs(presentation.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % gradients.length];
 
         return `
             <div class="presentation-card" data-presentation-id="${presentation.id}">
                 <div class="presentation-thumbnail" style="background: ${gradient}">
-                    ${presentation.thumbnail ?
-            `<img src="${presentation.thumbnail}" alt="${presentation.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
-            `<div class="default-icon"><i class="fas fa-presentation-screen"></i></div>`
-        }
+                    ${presentation.thumbnail ? 
+                        `<img src="${presentation.thumbnail}" alt="${presentation.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                        `<div class="default-icon"><i class="fas fa-presentation-screen"></i></div>`
+                    }
                     <div class="slide-count-badge">
                         <i class="fas fa-images"></i> ${presentation.slideCount}
                     </div>
@@ -688,7 +1186,7 @@ class PresentationDashboard {
         this.refreshBtn.querySelector('i').classList.add('fa-spin');
         await this.loadPresentations();
         this.renderPresentations();
-
+        
         setTimeout(() => {
             this.refreshBtn.querySelector('i').classList.remove('fa-spin');
         }, 500);
@@ -697,7 +1195,7 @@ class PresentationDashboard {
     updatePresentationCount() {
         const validPresentations = this.presentations.filter(p => p.slideCount > 0 && p.id !== 'placeholder');
         this.presentationCount.textContent = validPresentations.length;
-
+        
         // Update the header with more detailed info
         if (validPresentations.length !== this.presentations.length) {
             const totalFolders = this.presentations.length - (this.presentations.find(p => p.id === 'placeholder') ? 1 : 0);
