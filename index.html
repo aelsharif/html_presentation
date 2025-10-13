@@ -3,67 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML Presentation System</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .redirect-container {
-            text-align: center;
-            max-width: 500px;
-            padding: 40px;
-        }
-        .loader {
-            margin: 20px 0;
-            font-size: 2rem;
-            color: #4CAF50;
-        }
-        .redirect-message {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-        .manual-link {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: background 0.3s ease;
-        }
-        .manual-link:hover {
-            background: #45a049;
-        }
-    </style>
+    <title>Presentation Dashboard</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="redirect-container">
-        <div class="loader">
-            <i class="fas fa-spinner fa-spin"></i>
-        </div>
-        <div class="redirect-message">
-            Redirecting to Presentation Dashboard...
-        </div>
-        <p>If you're not redirected automatically, click the link below:</p>
-        <a href="dashboard.html" class="manual-link">Go to Dashboard</a>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <i class="fas fa-presentation-screen"></i>
+                    <h1>Presentation Dashboard</h1>
+                </div>
+                <div class="header-stats">
+                    <span class="stat-item">
+                        <i class="fas fa-folder"></i>
+                        <span id="presentationCount">0</span> Presentations
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-main">
+            <div class="search-section">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search presentations...">
+                </div>
+                <div class="view-options">
+                    <button class="view-btn active" id="gridView" title="Grid View">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-btn" id="listView" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="presentations-section">
+                <div class="section-header">
+                    <h2>Available Presentations</h2>
+                    <button class="refresh-btn" id="refreshBtn" title="Refresh Presentations">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+
+                <div class="presentations-grid" id="presentationsGrid">
+                    <!-- Presentations will be loaded here -->
+                </div>
+
+                <div class="loading-state" id="loadingState">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Loading presentations...</p>
+                </div>
+
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3>No Presentations Found</h3>
+                    <p>Create presentation folders in the 'slides/' directory to get started.</p>
+                    <div class="example-structure">
+                        <h4>Example folder structure:</h4>
+                        <code>
+                            slides/<br>
+                            ├── my-presentation/<br>
+                            │   ├── config.json<br>
+                            │   ├── 01-intro.html<br>
+                            │   └── 02-content.html<br>
+                            └── another-presentation/<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;├── config.json<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;└── 01-slide.html
+                        </code>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <p>&copy; 2024 HTML Presentation System</p>
+                <div class="footer-links">
+                    <a href="#" onclick="showHelp()"><i class="fas fa-question-circle"></i> Help</a>
+                    <a href="#" onclick="showAbout()"><i class="fas fa-info-circle"></i> About</a>
+                </div>
+            </div>
+        </footer>
     </div>
 
-    <script>
-        // Automatic redirect to dashboard after a short delay
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 2000);
-    </script>
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> How to Use</h3>
+                <button class="close-btn" onclick="closeModal('helpModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>Creating Presentations:</h4>
+                <ol>
+                    <li>Create a folder in the 'slides/' directory (e.g., 'slides/my-presentation/')</li>
+                    <li>Add a config.json file with presentation metadata</li>
+                    <li>Add numbered HTML slides (01-intro.html, 02-content.html, etc.)</li>
+                    <li>Refresh the dashboard to see your presentation</li>
+                </ol>
+                
+                <h4>Navigation:</h4>
+                <ul>
+                    <li>Click on a presentation card to open it</li>
+                    <li>Use arrow keys or navigation buttons in presentation view</li>
+                    <li>Press 'F' for fullscreen mode</li>
+                    <li>Use the back button to return to dashboard</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
 </body>
 </html>

@@ -257,7 +257,7 @@ class PresentationViewer {
     }
 
     goToDashboard() {
-        window.location.href = 'dashboard.html';
+        window.location.href = 'index.html';
     }
 
     updateNavigation() {
