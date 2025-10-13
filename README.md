@@ -182,6 +182,76 @@ A comprehensive HTML presentation platform that supports multiple presentations 
 </html>
 ```
 
+## 🔍 **Advanced Regex-Based Folder Discovery**
+
+The system uses sophisticated regular expression patterns to automatically discover presentation folders with flexible naming conventions:
+
+### **Supported Naming Patterns:**
+
+#### **Core Presentation Patterns:**
+- **Presentation**: `presentation`, `presentations`, `pres` + numbers/suffixes
+- **Slides**: `slide`, `slides` + numbers/suffixes  
+- **Decks**: `deck`, `decks` + numbers/suffixes
+- **Talks**: `talk`, `talks` + numbers/suffixes
+- **Demos**: `demo`, `demos` + numbers/suffixes
+
+#### **Project & Content Patterns:**
+- **Projects**: `project-2024`, `projects-1`, `project_demo`
+- **Content**: `content-1`, `material-final`, `training-intro`
+- **Courses**: `course-basic`, `tutorial-advanced`
+
+#### **Event & Meeting Patterns:**
+- **Meetings**: `meeting-1`, `conference-demo`, `workshop-intro`
+- **Reports**: `report-annual`, `pitch-final`, `intro-session`
+
+#### **Date-Based Patterns:**
+- **Year-based**: `2024-presentation`, `presentation-2024`
+- **Month-based**: `jan-2024`, `dec-report`, `2024-jan`
+- **Any 202X year**: Automatically detected
+
+#### **Generic Numbered Patterns:**
+- **Direct numbers**: `abc123`, `presentation1`, `slide2`
+- **Hyphenated**: `abc-123`, `presentation-1`, `slide-2`  
+- **Underscored**: `abc_123`, `presentation_1`, `slide_2`
+
+### **Example Auto-Detected Folder Names:**
+✅ **Standard**: `demo-presentation`, `business-presentation`, `tutorial-presentation`  
+✅ **Numbered**: `presentation-1`, `slide-demo`, `deck3`, `talk_final`  
+✅ **Projects**: `project-2024`, `projects-new`, `project_showcase`  
+✅ **Events**: `meeting-jan`, `workshop-intro`, `conference-2024`  
+✅ **Content**: `training-basic`, `course-advanced`, `material-1`  
+✅ **Reports**: `report-q4`, `pitch-final`, `demo-new`
+
+### **Smart Title Generation:**
+The system automatically converts folder names into readable titles:
+- `project-2024` → "Project 2024 Presentation"
+- `business-demo` → "Business Demo Presentation"  
+- `meeting-jan-2024` → "Meeting Jan 2024"
+- `slide_intro` → "Slide Intro Presentation"
+
+### **Regex Patterns Used:**
+```javascript
+// Core presentation patterns
+/^(pres|presentation|presentations?)(-|_|\d|$)/i
+/^(slide|slides)(-|_|\d|$)/i  
+/^(deck|decks?)(-|_|\d|$)/i
+
+// Project and content patterns
+/^(project|projects?)(-|_|\d|$)/i
+/^(content|contents?)(-|_|\d|$)/i
+/^(training|course|tutorial)(-|_|\d|$)/i
+
+// Date-based patterns  
+/^(202[0-9]|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(-|_)/i
+
+// Generic numbered patterns
+/^[a-z]+\d+$/i
+/^[a-z]+-\d+$/i
+/^[a-z]+_\d+$/i
+```
+
+The discovery system is **performance-optimized** with timeouts, quick checks, and fallback mechanisms to ensure fast loading even when scanning many potential folder names.
+
 ## 🚫 Features Not Yet Implemented
 
 ### Dashboard Enhancements
