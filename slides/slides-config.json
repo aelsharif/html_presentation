@@ -1,0 +1,41 @@
+{
+  "presentation": {
+    "title": "HTML Presentation System",
+    "description": "A fully functional HTML presentation with keyboard navigation",
+    "author": "Your Name",
+    "created": "2025-01-13"
+  },
+  "slides": [
+    {
+      "number": 1,
+      "path": "slides/01-welcome.html",
+      "title": "Welcome",
+      "description": "Introduction to the presentation system"
+    },
+    {
+      "number": 2,
+      "path": "slides/02-features.html", 
+      "title": "Features",
+      "description": "Overview of key features and capabilities"
+    },
+    {
+      "number": 3,
+      "path": "slides/03-usage.html",
+      "title": "How to Use", 
+      "description": "Step-by-step usage instructions"
+    },
+    {
+      "number": 4,
+      "path": "slides/04-conclusion.html",
+      "title": "Conclusion",
+      "description": "Summary and thank you message"
+    }
+  ],
+  "settings": {
+    "autoAdvance": false,
+    "slideTimer": 0,
+    "showThumbnails": true,
+    "allowFullscreen": true,
+    "keyboardNavigation": true
+  }
+}

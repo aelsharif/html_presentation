@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Presentation</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Main slide iframe container -->
+        <div class="slide-container">
+            <iframe id="slideFrame" src="" frameborder="0"></iframe>
+            <div class="loading-message" id="loadingMessage">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading presentation...</p>
+            </div>
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>No slides found. Please add slide files to the 'slides' folder using the naming convention: 01-title.html, 02-title.html, etc.</p>
+            </div>
+        </div>
+
+        <!-- Navigation controls -->
+        <nav class="presentation-nav">
+            <div class="nav-controls">
+                <button class="nav-btn" id="prevBtn" title="Previous slide (←)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="slide-counter">
+                    <span id="currentSlide">1</span>
+                    <span class="separator">/</span>
+                    <span id="totalSlides">0</span>
+                </div>
+                
+                <button class="nav-btn" id="nextBtn" title="Next slide (→)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Slide thumbnail navigation (optional) -->
+            <div class="slide-thumbnails" id="slideThumbnails">
+                <!-- Thumbnails will be populated by JavaScript -->
+            </div>
+        </nav>
+
+        <!-- Fullscreen toggle -->
+        <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle fullscreen (F)">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+
+    <script src="js/presentation.js"></script>
+</body>
+</html>
