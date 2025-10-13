@@ -198,24 +198,24 @@ tests/
 ```javascript
 // Example test structure
 describe('PresentationViewer - Navigation', () => {
-  let viewer;
-
-  beforeEach(() => {
-    TestUtils.resetDOM();
-    viewer = new PresentationViewer();
-  });
-
-  it('should navigate to next slide with arrow key', () => {
-    // Arrange
-    viewer.currentSlide = 1;
-    viewer.totalSlides = 3;
-
-    // Act
-    viewer.handleKeyPress({ key: 'ArrowRight' });
-
-    // Assert
-    expect(viewer.currentSlide).toBe(2);
-  });
+    let viewer;
+    
+    beforeEach(() => {
+        TestUtils.resetDOM();
+        viewer = new PresentationViewer();
+    });
+    
+    it('should navigate to next slide with arrow key', () => {
+        // Arrange
+        viewer.currentSlide = 1;
+        viewer.totalSlides = 3;
+        
+        // Act
+        viewer.handleKeyPress({ key: 'ArrowRight' });
+        
+        // Assert
+        expect(viewer.currentSlide).toBe(2);
+    });
 });
 ```
 
@@ -265,29 +265,29 @@ The test suite ensures **reliability**, **performance**, and **maintainability**
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Slide Title</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 40px;
-      background: linear-gradient(135deg, #your-colors);
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    /* Add your custom styles here */
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Slide Title</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #your-colors);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* Add your custom styles here */
+    </style>
 </head>
 <body>
-<div class="slide-content">
-  <h1>Your Slide Title</h1>
-  <p>Your slide content here...</p>
-</div>
+    <div class="slide-content">
+        <h1>Your Slide Title</h1>
+        <p>Your slide content here...</p>
+    </div>
 </body>
 </html>
 ```
@@ -343,7 +343,7 @@ The system automatically converts folder names into readable titles:
 ```javascript
 // Core presentation patterns
 /^(pres|presentation|presentations?)(-|_|\d|$)/i
-/^(slide|slides)(-|_|\d|$)/i
+/^(slide|slides)(-|_|\d|$)/i  
 /^(deck|decks?)(-|_|\d|$)/i
 
 // Project and content patterns
@@ -496,12 +496,12 @@ The discovery system is **performance-optimized** while maintaining **100% compl
 ```javascript
 {
   title: "Presentation Title",
-          description: "Brief description",
-          author: "Author Name",
-          created: "2024-01-15",
-          slideCount: 4,
-          thumbnail: "path/to/thumbnail.jpg", // Optional
-          folder: "presentation-folder-name"
+  description: "Brief description",
+  author: "Author Name", 
+  created: "2024-01-15",
+  slideCount: 4,
+  thumbnail: "path/to/thumbnail.jpg", // Optional
+  folder: "presentation-folder-name"
 }
 ```
 
@@ -509,9 +509,9 @@ The discovery system is **performance-optimized** while maintaining **100% compl
 ```javascript
 {
   presentations: [...],        // Array of presentation objects
-          filteredPresentations: [...], // Filtered results from search
-          currentView: 'grid',         // 'grid' or 'list'
-          searchTerm: ''               // Current search filter
+  filteredPresentations: [...], // Filtered results from search
+  currentView: 'grid',         // 'grid' or 'list'
+  searchTerm: ''               // Current search filter
 }
 ```
 
@@ -519,10 +519,10 @@ The discovery system is **performance-optimized** while maintaining **100% compl
 ```javascript
 {
   currentSlide: 1,             // Currently displayed slide
-          totalSlides: 4,              // Total slides in presentation
-          presentationFolder: 'demo',  // Folder name
-          presentationTitle: 'Demo',   // Display title
-          slides: [...]                // Array of slide objects
+  totalSlides: 4,              // Total slides in presentation
+  presentationFolder: 'demo',  // Folder name
+  presentationTitle: 'Demo',   // Display title
+  slides: [...]                // Array of slide objects
 }
 ```
 
