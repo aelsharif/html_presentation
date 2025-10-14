@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Fundamentals - Web Development Tutorial</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 40px;
+            text-align: center;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .content-section h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #FFD700;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 10px;
+        }
+
+        .html-example {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin: 15px 0;
+            border-left: 4px solid #FFD700;
+            overflow-x: auto;
+        }
+
+        .element-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .element-list li {
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 3px solid #38ef7d;
+        }
+
+        .element-tag {
+            color: #FFD700;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .best-practices {
+            grid-column: 1 / -1;
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .practice-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .practice-icon {
+            margin-right: 15px;
+            font-size: 1.2rem;
+            margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 20px; }
+            h1 { font-size: 2rem; }
+            .content-grid { 
+                grid-template-columns: 1fr; 
+                gap: 20px; 
+            }
+            .html-example { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-content">
+        <h1>HTML Fundamentals</h1>
+        
+        <div class="content-grid">
+            <div class="content-section">
+                <h2>🏗️ HTML Structure</h2>
+                <p>HTML provides the structural foundation of web pages using semantic elements.</p>
+                
+                <div class="html-example">
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;My Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header&gt;...&lt;/header&gt;
+    &lt;main&gt;...&lt;/main&gt;
+    &lt;footer&gt;...&lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2>📝 Essential Elements</h2>
+                <ul class="element-list">
+                    <li><span class="element-tag">&lt;h1&gt;-&lt;h6&gt;</span> - Headings</li>
+                    <li><span class="element-tag">&lt;p&gt;</span> - Paragraphs</li>
+                    <li><span class="element-tag">&lt;div&gt;</span> - Generic container</li>
+                    <li><span class="element-tag">&lt;span&gt;</span> - Inline container</li>
+                    <li><span class="element-tag">&lt;a&gt;</span> - Links</li>
+                    <li><span class="element-tag">&lt;img&gt;</span> - Images</li>
+                    <li><span class="element-tag">&lt;ul&gt;/&lt;ol&gt;</span> - Lists</li>
+                    <li><span class="element-tag">&lt;form&gt;</span> - Forms</li>
+                </ul>
+            </div>
+
+            <div class="content-section">
+                <h2>🎯 Semantic HTML</h2>
+                <p>Use meaningful elements that describe content purpose:</p>
+                
+                <div class="html-example">
+&lt;article&gt;
+    &lt;header&gt;
+        &lt;h1&gt;Article Title&lt;/h1&gt;
+        &lt;time&gt;2024-01-15&lt;/time&gt;
+    &lt;/header&gt;
+    &lt;section&gt;
+        &lt;p&gt;Article content...&lt;/p&gt;
+    &lt;/section&gt;
+&lt;/article&gt;
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2>🔧 Attributes</h2>
+                <p>Attributes provide additional information about elements:</p>
+                
+                <div class="html-example">
+&lt;img src="image.jpg" 
+     alt="Description"
+     width="300"
+     height="200"&gt;
+
+&lt;a href="https://example.com"
+   target="_blank"
+   rel="noopener"&gt;
+   Link Text
+&lt;/a&gt;
+                </div>
+            </div>
+
+            <div class="content-section best-practices">
+                <h2>✅ Best Practices</h2>
+                
+                <div class="practice-item">
+                    <span class="practice-icon">📱</span>
+                    <div>
+                        <strong>Always include viewport meta tag</strong><br>
+                        <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code>
+                    </div>
+                </div>
+                
+                <div class="practice-item">
+                    <span class="practice-icon">♿</span>
+                    <div>
+                        <strong>Use semantic elements</strong><br>
+                        Choose elements based on meaning, not appearance
+                    </div>
+                </div>
+                
+                <div class="practice-item">
+                    <span class="practice-icon">🖼️</span>
+                    <div>
+                        <strong>Always include alt text for images</strong><br>
+                        Improves accessibility and SEO
+                    </div>
+                </div>
+                
+                <div class="practice-item">
+                    <span class="practice-icon">🔍</span>
+                    <div>
+                        <strong>Validate your HTML</strong><br>
+                        Use W3C validator to check for errors
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

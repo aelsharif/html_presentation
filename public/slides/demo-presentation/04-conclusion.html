@@ -9,43 +9,128 @@
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 40px;
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-        }
-        .slide-content {
-            max-width: 800px;
             text-align: center;
         }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 40px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+
+        .slide-content {
+            max-width: 700px;
+            width: 100%;
         }
-        .message {
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 30px;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .conclusion-text {
             font-size: 1.3rem;
             line-height: 1.6;
             margin-bottom: 40px;
+            opacity: 0.9;
         }
+
+        .features-summary {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 40px;
+        }
+
+        .features-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .feature-tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .cta {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-top: 30px;
+        }
+
         .thank-you {
             font-size: 2rem;
-            font-weight: bold;
-            color: #ff6b6b;
+            font-weight: 500;
+            margin-top: 40px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .conclusion-text {
+                font-size: 1.1rem;
+            }
+            
+            .features-summary {
+                padding: 20px;
+            }
+            
+            .features-list {
+                gap: 10px;
+            }
+            
+            .feature-tag {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="slide-content">
-        <h1>🎉 Conclusion</h1>
-        <div class="message">
-            You've successfully navigated through the HTML Presentation System demo!
-            <br><br>
-            This system provides a modern, responsive way to create and display presentations using simple HTML files.
+        <h1>Conclusion</h1>
+        
+        <div class="conclusion-text">
+            You now have a fully functional HTML presentation system that combines the flexibility of web technologies with intuitive navigation controls.
         </div>
-        <div class="thank-you">Thank You! 🙏</div>
+        
+        <div class="features-summary">
+            <strong>What You Get:</strong>
+            <div class="features-list">
+                <div class="feature-tag">⌨️ Keyboard Navigation</div>
+                <div class="feature-tag">📱 Responsive Design</div>
+                <div class="feature-tag">🎯 Auto Discovery</div>
+                <div class="feature-tag">🖥️ Fullscreen Mode</div>
+                <div class="feature-tag">⛵ Independent Slides</div>
+                <div class="feature-tag">🖱️ Mouse Controls</div>
+            </div>
+        </div>
+        
+        <div class="cta">
+            Start creating your own presentations by adding HTML files to the slides folder!
+        </div>
+        
+        <div class="thank-you">
+            Thank You! 🎉
+        </div>
     </div>
 </body>
 </html>

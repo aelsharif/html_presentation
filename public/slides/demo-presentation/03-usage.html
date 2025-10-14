@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usage - Slide 3</title>
+    <title>How to Use - Slide 3</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -13,39 +13,154 @@
             color: white;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
-            align-items: center;
         }
+
         .slide-content {
             max-width: 800px;
-            text-align: center;
+            margin: 0 auto;
         }
+
         h1 {
             font-size: 3rem;
             margin-bottom: 40px;
+            text-align: center;
+            font-weight: 300;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        .usage-steps {
-            font-size: 1.2rem;
-            line-height: 2;
-            text-align: left;
+
+        .instructions {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
         }
-        .step {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
+
+        .instruction-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .step-number {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .instruction-content {
+            flex: 1;
+        }
+
+        .instruction-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .instruction-description {
+            font-size: 1rem;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        .code-example {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .instruction-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .step-number {
+                align-self: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="slide-content">
         <h1>How to Use</h1>
-        <div class="usage-steps">
-            <div class="step">1️⃣ Navigate with arrow keys or click buttons</div>
-            <div class="step">2️⃣ Press F for fullscreen mode</div>
-            <div class="step">3️⃣ Use Home/End for first/last slide</div>
-            <div class="step">4️⃣ Click thumbnails for quick navigation</div>
+        
+        <div class="instructions">
+            <div class="instruction-item">
+                <div class="step-number">1</div>
+                <div class="instruction-content">
+                    <div class="instruction-title">Create Slide Files</div>
+                    <div class="instruction-description">
+                        Add HTML files to the 'slides' folder using numbered naming conventions:
+                        <div class="code-example">
+                            slides/01-welcome.html<br>
+                            slides/02-features.html<br>
+                            slides/03-usage.html
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instruction-item">
+                <div class="step-number">2</div>
+                <div class="instruction-content">
+                    <div class="instruction-title">Open Presentation</div>
+                    <div class="instruction-description">
+                        Open index.html in your browser. The presentation will automatically discover and load all numbered slide files.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instruction-item">
+                <div class="step-number">3</div>
+                <div class="instruction-content">
+                    <div class="instruction-title">Navigate Slides</div>
+                    <div class="instruction-description">
+                        Use keyboard shortcuts or navigation buttons:
+                        <div class="code-example">
+                            ← → Arrow keys: Previous/Next slide<br>
+                            Space: Next slide<br>
+                            Home/End: First/Last slide<br>
+                            F: Toggle fullscreen
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instruction-item">
+                <div class="step-number">4</div>
+                <div class="instruction-content">
+                    <div class="instruction-title">Independent Viewing</div>
+                    <div class="instruction-description">
+                        Each slide can be viewed independently by opening its HTML file directly in the browser.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
